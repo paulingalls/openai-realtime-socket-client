@@ -21,7 +21,8 @@ export const AzureVoiceList = ['amuch', 'dan', 'elan', 'marilyn', 'meadow', 'bre
 export type AzureVoice = typeof AzureVoiceList[number];
 export const OpenAIVoiceList = ['alloy', 'echo', 'shimmer', 'ash', 'ballad', 'coral', 'sage', 'verse'] as const;
 export type OpenAIVoice = typeof OpenAIVoiceList[number];
-export type Voice = AzureVoice | OpenAIVoice;type Modality = 'text' | 'audio';
+export type Voice = AzureVoice | OpenAIVoice;
+type Modality = 'text' | 'audio';
 type ToolDefinition = {
   type: string,
   name: string,
