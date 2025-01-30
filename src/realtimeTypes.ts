@@ -1,4 +1,4 @@
-type RealtimeEvent = {
+export type RealtimeEvent = {
   event_id: string,
 }
 
@@ -17,8 +17,11 @@ type RealtimeFunctionResponseEvent = RealtimeEvent & {
 }
 
 type AudioFormat = 'pcm16' | 'g711_ulaw' | 'g711_alaw';
-type Voice = 'alloy' | 'ash' | 'ballad' | 'coral' | 'echo' | 'sage' | 'shimmer' | 'verse';
-type Modality = 'text' | 'audio';
+export const AzureVoiceList = ['amuch', 'dan', 'elan', 'marilyn', 'meadow', 'breeze', 'cove', 'ember', 'jupiter', 'alloy', 'echo', 'shimmer'] as const;
+export type AzureVoice = typeof AzureVoiceList[number];
+export const OpenAIVoiceList = ['alloy', 'echo', 'shimmer', 'ash', 'ballad', 'coral', 'sage', 'verse'] as const;
+export type OpenAIVoice = typeof OpenAIVoiceList[number];
+export type Voice = AzureVoice | OpenAIVoice;type Modality = 'text' | 'audio';
 type ToolDefinition = {
   type: string,
   name: string,
@@ -28,6 +31,8 @@ type ToolDefinition = {
 type ToolChoice = 'auto' | 'none' | 'required' | { type: 'function'; name: string };
 
 export type RealtimeResponseConfig = {
+  conversation: string,
+  metadata: Record<string, any>,
   modalities: Array<Modality>,
   instructions: string,
   voice: Voice,
@@ -107,11 +112,11 @@ type RealtimeContentPart = {
 export type RealtimeErrorEvent = RealtimeEvent & {
   type: 'error',
   error: {
-    type: string,
-    code: string,
     message: string,
-    param: null,
-    event_id: string
+    type?: string,
+    code?: string,
+    param?: null,
+    event_id?: string
   }
 }
 

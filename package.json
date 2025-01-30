@@ -32,6 +32,7 @@
   "devDependencies": {
     "@paralleldrive/cuid2": "2.2.2",
     "@types/bun": "1.2.1",
+    "@types/ws": "8.5.14",
     "bun-plugin-dts": "0.3.0",
     "ws": "8.18.0"
   }
