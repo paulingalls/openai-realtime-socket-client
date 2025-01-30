@@ -1,26 +1,79 @@
-# bun starter
+# Realtime Voice Client
 
-## Getting Started
+## Overview
 
-Click the [Use this template](https://github.com/wobsoriano/bun-lib-starter/generate) button to create a new repository with the contents starter.
+This package provides a client for managing real-time voice interactions, including handling reconnections, session updates, and managing conversation items. It is built with TypeScript and designed to work with WebSocket connections.
 
-OR
+## Features
 
-Run `bun create wobsoriano/bun-lib-starter ./my-lib`.
+- Automatic reconnection with exponential backoff
+- Session management and updates
+- Real-time conversation item handling
+- Audio buffer management
+- Support for Azure and OpenAI voice services
 
-## Setup
+## Installation
+
+Install the package using bun:
 
 ```bash
-# install dependencies
+bun add realtime-voice-client
+```
+
+## Usage
+
+### Importing the Client
+
+```typescript
+import RealtimeVoiceClient from 'realtime-voice-client';
+```
+
+### Creating a New Client
+
+```typescript
+const client = new RealtimeVoiceClient({
+  apiKey: 'your-api-key',
+  sessionConfig: {
+    voice: 'alloy',
+    // other session configurations
+  },
+});
+```
+
+### Handling Events
+
+```typescript
+client.on('connect', () => {
+  console.log('Connected to the voice service');
+});
+```
+
+### Sending Conversation Items
+
+```typescript
+client.createConversationItem(item);
+client.truncateConversationItem(itemId, contentIndex, audioEndMs);
+client.deleteConversationItem(itemId);
+```
+
+### Managing Audio Buffers
+
+```typescript
+client.appendInputAudio(buffer);
+client.commitInputAudio();
+client.clearInputAudio();
+```
+
+## Development
+
+To build the package, run the following command:
+
+```bash
 bun install
-
-# test the app
 bun test
-
-# build the app, available under dist
-bun run build
+bun build
 ```
 
 ## License
 
-MIT
+This package is open source and available under the [MIT License](LICENSE).
