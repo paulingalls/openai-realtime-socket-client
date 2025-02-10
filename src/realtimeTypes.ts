@@ -17,9 +17,34 @@ type RealtimeFunctionResponseEvent = RealtimeEvent & {
 }
 
 type AudioFormat = 'pcm16' | 'g711_ulaw' | 'g711_alaw';
-export const AzureVoiceList = ['amuch', 'dan', 'elan', 'marilyn', 'meadow', 'breeze', 'cove', 'ember', 'jupiter', 'alloy', 'echo', 'shimmer'] as const;
+export const AzureVoiceList = [
+  'amuch',
+  'dan',
+  'elan',
+  'marilyn',
+  'meadow',
+  'breeze',
+  'cove',
+  'ember',
+  'jupiter',
+  'alloy',
+  'echo',
+  'shimmer',
+  'ash',
+  'ballad',
+  'coral',
+  'sage',
+  'verse'] as const;
 export type AzureVoice = typeof AzureVoiceList[number];
-export const OpenAIVoiceList = ['alloy', 'echo', 'shimmer', 'ash', 'ballad', 'coral', 'sage', 'verse'] as const;
+export const OpenAIVoiceList = [
+  'alloy',
+  'echo',
+  'shimmer',
+  'ash',
+  'ballad',
+  'coral',
+  'sage',
+  'verse'] as const;
 export type OpenAIVoice = typeof OpenAIVoiceList[number];
 export type Voice = AzureVoice | OpenAIVoice;
 type Modality = 'text' | 'audio';

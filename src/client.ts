@@ -1,6 +1,5 @@
 import {EventEmitter} from 'node:events';
-import type {WebSocket as WS} from 'ws';
-import type {MessageEvent as WS_MessageEvent} from 'ws';
+import type {MessageEvent as WS_MessageEvent, WebSocket as WS} from 'ws';
 import {createId} from '@paralleldrive/cuid2';
 import {hasNativeWebSocket, trimDebugEvent} from './utils';
 import {
@@ -14,7 +13,8 @@ import {
   InputAudioBufferClearedEvent,
   InputAudioBufferCommittedEvent,
   InputAudioBufferSpeechStartedEvent,
-  InputAudioBufferSpeechStoppedEvent, OpenAIVoiceList,
+  InputAudioBufferSpeechStoppedEvent,
+  OpenAIVoiceList,
   RateLimitsUpdatedEvent,
   RealtimeErrorEvent,
   RealtimeItem,
@@ -463,15 +463,19 @@ export class RealtimeVoiceClient extends EventEmitter<RealtimeVoiceEvents> imple
   }
 
   protected saveSession(newSession: RealtimeSession) {
-    const sessionCopy: any = structuredClone(newSession);
-    delete sessionCopy['id'];
-    delete sessionCopy['object'];
-    delete sessionCopy['model'];
-    delete sessionCopy['expires_at'];
-    delete sessionCopy['client_secret'];
-    delete sessionCopy['custom_voice_id'];
-    this._log('Saving session:', sessionCopy);
-    this.sessionConfig = sessionCopy;
+    this.sessionConfig = {
+      modalities: structuredClone(newSession.modalities),
+      instructions: newSession.instructions,
+      voice: newSession.voice,
+      input_audio_format: structuredClone(newSession.input_audio_format),
+      output_audio_format: structuredClone(newSession.output_audio_format),
+      input_audio_transcription: structuredClone(newSession.input_audio_transcription),
+      turn_detection: structuredClone(newSession.turn_detection),
+      tools: structuredClone(newSession.tools),
+      tool_choice: structuredClone(newSession.tool_choice),
+      temperature: newSession.temperature,
+      max_response_output_tokens: newSession.max_response_output_tokens,
+    };
   }
 
   protected receive(type: string, message: any) {
