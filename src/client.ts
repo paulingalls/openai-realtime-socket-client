@@ -173,7 +173,7 @@ export class RealtimeVoiceClient extends EventEmitter<RealtimeVoiceEvents> imple
     this.validateVoice();
   }
 
-  async connect() {
+  public async connect() {
     if (this.isConnected) {
       return;
     }
@@ -227,42 +227,11 @@ export class RealtimeVoiceClient extends EventEmitter<RealtimeVoiceEvents> imple
     this.ws.addEventListener('close', this.onCloseWithReconnect.bind(this));
   }
 
-  onOpen() {
-    this._log(`Connected to "${this.url}"`);
-
-    this.isConnected = true;
-    if (this.reconnectAttempts > 0) {
-      this.updateSocketState();
-    } else {
-      this.emit('connected');
-    }
-    this.reconnectAttempts = 0;
+  public canReconnect(): boolean {
+    return this.autoReconnect && this.reconnectAttempts < MAX_RECONNECT_ATTEMPTS;
   }
 
-  onMessage(event: MessageEvent<any> | WS_MessageEvent) {
-    const message: any = JSON.parse(event.data);
-    this._log('Received message:', message);
-
-    this.receive(message.type, message);
-  }
-
-  async onError() {
-    this._log(`Error, disconnected from "${this.url}"`);
-
-    if (!await this.disconnect(this.autoReconnect)) {
-      this.emit('close', {type: 'close', error: true});
-    }
-  }
-
-  async onCloseWithReconnect() {
-    this._log(`Disconnected from "${this.url}", reconnect: ${this.autoReconnect}, reconnectAttempts: ${this.reconnectAttempts}`);
-
-    if (!await this.disconnect(this.autoReconnect)) {
-      this.emit('close', {type: 'close', error: false});
-    }
-  }
-
-  async disconnect(reconnect: boolean = false): Promise<boolean> {
+  public async disconnect(reconnect: boolean = false): Promise<boolean> {
     this._log('Disconnect called:', this.isConnected, reconnect);
     if (this.isConnected) {
       this.isConnected = false;
@@ -323,15 +292,15 @@ export class RealtimeVoiceClient extends EventEmitter<RealtimeVoiceEvents> imple
     return false;
   }
 
-  getConversationItems(): RealtimeItem[] {
+  public getConversationItems(): RealtimeItem[] {
     return this.transcription.getOrderedItems();
   }
 
-  getItem(item_id: string): RealtimeItem | undefined {
+  public getItem(item_id: string): RealtimeItem | undefined {
     return this.transcription.getItem(item_id);
   }
 
-  updateSession(sessionConfig: Partial<RealtimeSessionConfig>) {
+  public updateSession(sessionConfig: Partial<RealtimeSessionConfig>) {
     if (!this.isConnected) {
       throw new Error('Not connected');
     }
@@ -347,7 +316,7 @@ export class RealtimeVoiceClient extends EventEmitter<RealtimeVoiceEvents> imple
     this.ws?.send(message);
   }
 
-  appendInputAudio(base64AudioBuffer: string) {
+  public appendInputAudio(base64AudioBuffer: string) {
     if (!this.isConnected) {
       throw new Error('Not connected');
     }
@@ -360,7 +329,7 @@ export class RealtimeVoiceClient extends EventEmitter<RealtimeVoiceEvents> imple
     }
   }
 
-  commitInputAudio() {
+  public commitInputAudio() {
     if (!this.isConnected) {
       throw new Error('Not connected');
     }
@@ -370,7 +339,7 @@ export class RealtimeVoiceClient extends EventEmitter<RealtimeVoiceEvents> imple
     }));
   }
 
-  clearInputAudio() {
+  public clearInputAudio() {
     if (!this.isConnected) {
       throw new Error('Not connected');
     }
@@ -380,7 +349,7 @@ export class RealtimeVoiceClient extends EventEmitter<RealtimeVoiceEvents> imple
     }));
   }
 
-  createConversationItem(item: RealtimeItem, previousItemId: string | null = null) {
+  public createConversationItem(item: RealtimeItem, previousItemId: string | null = null) {
     if (!this.isConnected) {
       throw new Error('Not connected');
     }
@@ -392,7 +361,7 @@ export class RealtimeVoiceClient extends EventEmitter<RealtimeVoiceEvents> imple
     }));
   }
 
-  truncateConversationItem(itemId: string, contentIndex: number, audioEndMs: number) {
+  public truncateConversationItem(itemId: string, contentIndex: number, audioEndMs: number) {
     if (!this.isConnected) {
       throw new Error('Not connected');
     }
@@ -405,7 +374,7 @@ export class RealtimeVoiceClient extends EventEmitter<RealtimeVoiceEvents> imple
     }));
   }
 
-  deleteConversationItem(itemId: string) {
+  public deleteConversationItem(itemId: string) {
     if (!this.isConnected) {
       throw new Error('Not connected');
     }
@@ -416,7 +385,7 @@ export class RealtimeVoiceClient extends EventEmitter<RealtimeVoiceEvents> imple
     }));
   }
 
-  createResponse(responseConfig: Partial<RealtimeResponseConfig>) {
+  public createResponse(responseConfig: Partial<RealtimeResponseConfig>) {
     if (!this.isConnected) {
       throw new Error('Not connected');
     }
@@ -427,7 +396,7 @@ export class RealtimeVoiceClient extends EventEmitter<RealtimeVoiceEvents> imple
     }));
   }
 
-  cancelResponse() {
+  public cancelResponse() {
     if (!this.isConnected) {
       throw new Error('Not connected');
     }
@@ -446,6 +415,41 @@ export class RealtimeVoiceClient extends EventEmitter<RealtimeVoiceEvents> imple
       if (!OpenAIVoiceList.includes(this.sessionConfig.voice as any)) {
         throw new Error(`Invalid voice for OpenAI: ${this.sessionConfig.voice}. Supported values are: ${OpenAIVoiceList.join(', ')}`);
       }
+    }
+  }
+
+  protected onOpen() {
+    this._log(`Connected to "${this.url}"`);
+
+    this.isConnected = true;
+    if (this.reconnectAttempts > 0) {
+      this.updateSocketState();
+    } else {
+      this.emit('connected');
+    }
+    this.reconnectAttempts = 0;
+  }
+
+  protected onMessage(event: MessageEvent<any> | WS_MessageEvent) {
+    const message: any = JSON.parse(event.data);
+    this._log('Received message:', message);
+
+    this.receive(message.type, message);
+  }
+
+  protected async onError() {
+    this._log(`Error, disconnected from "${this.url}"`);
+
+    if (!await this.disconnect(this.autoReconnect)) {
+      this.emit('close', {type: 'close', error: true});
+    }
+  }
+
+  async onCloseWithReconnect() {
+    this._log(`Disconnected from "${this.url}", reconnect: ${this.autoReconnect}, reconnectAttempts: ${this.reconnectAttempts}`);
+
+    if (!await this.disconnect(this.autoReconnect)) {
+      this.emit('close', {type: 'close', error: false});
     }
   }
 
