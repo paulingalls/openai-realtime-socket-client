@@ -88,7 +88,7 @@ export interface RealtimeVoiceEvents {
 }
 
 interface RealtimeVoiceClientConfig {
-  sessionConfig?: RealtimeSessionConfig;
+  sessionConfig?: Partial<RealtimeSessionConfig>;
   apiKey?: string;
   realtimeUrl?: string;
   model?: string;
@@ -425,6 +425,7 @@ export class RealtimeVoiceClient extends EventEmitter<RealtimeVoiceEvents> imple
     if (this.reconnectAttempts > 0) {
       this.updateSocketState();
     } else {
+      this.updateSession({})
       this.emit('connected');
     }
     this.reconnectAttempts = 0;
@@ -457,7 +458,7 @@ export class RealtimeVoiceClient extends EventEmitter<RealtimeVoiceEvents> imple
     if (!this.isConnected) {
       throw new Error('Not connected');
     }
-    this.updateSession(this.sessionConfig);
+    this.updateSession({});
     const items = this.getConversationItems();
     let previousItemId: string | null = null;
     items.forEach((item) => {
@@ -486,9 +487,6 @@ export class RealtimeVoiceClient extends EventEmitter<RealtimeVoiceEvents> imple
     switch (type) {
       case 'error':
         this.emit('error', message);
-        break;
-      case 'session.created':
-        this.saveSession((message as SessionCreatedEvent).session);
         break;
       case 'session.updated':
         this.saveSession((message as SessionUpdatedEvent).session);

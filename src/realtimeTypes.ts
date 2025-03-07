@@ -14,6 +14,7 @@ type RealtimeFunctionResponseEvent = RealtimeEvent & {
   item_id: string,
   output_index: number,
   call_id: string,
+  name: string
 }
 
 type AudioFormat = 'pcm16' | 'g711_ulaw' | 'g711_alaw';
