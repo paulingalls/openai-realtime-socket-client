@@ -17,7 +17,7 @@ This package provides a client for managing real-time voice interactions, includ
 Install the package using bun:
 
 ```bash
-bun add realtime-voice-client
+bun add openai-realtime-socket-client
 ```
 
 ## Usage
@@ -25,7 +25,7 @@ bun add realtime-voice-client
 ### Importing the Client
 
 ```typescript
-import RealtimeVoiceClient from 'realtime-voice-client';
+import { RealtimeVoiceClient } from 'openai-realtime-socket-client';
 ```
 
 ### Creating a New Client
