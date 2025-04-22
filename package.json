@@ -1,7 +1,7 @@
 {
   "name": "openai-realtime-socket-client",
   "type": "module",
-  "version": "1.0.3",
+  "version": "2.0.0",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -32,9 +32,9 @@
   "author": "Paul Ingalls <paulingalls@gmail.com>",
   "devDependencies": {
     "@paralleldrive/cuid2": "2.2.2",
-    "@types/bun": "1.2.1",
-    "@types/ws": "8.5.14",
+    "@types/bun": "1.2.10",
+    "@types/ws": "8.18.1",
     "bun-plugin-dts": "0.3.0",
-    "ws": "8.18.0"
+    "ws": "8.18.1"
   }
 }

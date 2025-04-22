@@ -8,7 +8,9 @@ import {
   ConversationItemCreatedEvent,
   ConversationItemDeletedEvent,
   ConversationItemInputAudioTranscriptionCompletedEvent,
+  ConversationItemInputAudioTranscriptionDeltaEvent,
   ConversationItemInputAudioTranscriptionFailedEvent,
+  ConversationItemRetrievedEvent,
   ConversationItemTruncatedEvent,
   InputAudioBufferClearedEvent,
   InputAudioBufferCommittedEvent,
@@ -21,6 +23,7 @@ import {
   RealtimeResponseConfig,
   RealtimeSession,
   RealtimeSessionConfig,
+  RealtimeTranscriptionSessionConfig,
   ResponseAudioDeltaEvent,
   ResponseAudioDoneEvent,
   ResponseAudioTranscriptDeltaEvent,
@@ -37,6 +40,7 @@ import {
   ResponseTextDoneEvent,
   SessionCreatedEvent,
   SessionUpdatedEvent,
+  TranscriptionSessionUpdatedEvent,
 } from './realtimeTypes';
 import {Transcription} from './transcription';
 import type {ClientRequest} from 'node:http';
@@ -63,9 +67,11 @@ export interface RealtimeVoiceEvents {
   'conversation.created': [ConversationCreatedEvent];
   'conversation.item.created': [ConversationItemCreatedEvent];
   'conversation.item.input_audio_transcription.completed': [ConversationItemInputAudioTranscriptionCompletedEvent];
+  'conversation.item.input_audio_transcription.delta': [ConversationItemInputAudioTranscriptionDeltaEvent];
   'conversation.item.input_audio_transcription.failed': [ConversationItemInputAudioTranscriptionFailedEvent];
   'conversation.item.truncated': [ConversationItemTruncatedEvent];
   'conversation.item.deleted': [ConversationItemDeletedEvent];
+  'conversation.item.retrieved': [ConversationItemRetrievedEvent];
   'input_audio_buffer.committed': [InputAudioBufferCommittedEvent];
   'input_audio_buffer.cleared': [InputAudioBufferClearedEvent];
   'input_audio_buffer.speech_started': [InputAudioBufferSpeechStartedEvent];
@@ -84,6 +90,7 @@ export interface RealtimeVoiceEvents {
   'response.audio.done': [ResponseAudioDoneEvent];
   'response.function_call_arguments.delta': [ResponseFunctionCallArgumentsDeltaEvent];
   'response.function_call_arguments.done': [ResponseFunctionCallArgumentsDoneEvent];
+  'transcription_session.updated': [TranscriptionSessionUpdatedEvent];  
   'rate_limits.updated': [RateLimitsUpdatedEvent];
 }
 
@@ -154,19 +161,20 @@ export class RealtimeVoiceClient extends EventEmitter<RealtimeVoiceEvents> imple
       voice: 'shimmer',
       input_audio_format: 'pcm16',
       output_audio_format: 'pcm16',
-      input_audio_transcription: {
-        model: 'whisper-1',
-      },
+      input_audio_transcription: null,
+      input_audio_noise_reduction: null,
       turn_detection: {
         type: 'server_vad',
+        create_response: true,
+        interrupt_response: true,
         threshold: 0.5,
         prefix_padding_ms: 300,
-        silence_duration_ms: 1500,
+        silence_duration_ms: 500,
       },
       tools: [],
       tool_choice: 'auto',
       temperature: 0.8,
-      max_response_output_tokens: 4096,
+      max_response_output_tokens: 'inf',
       ...sessionConfig,
     };
 
@@ -205,7 +213,6 @@ export class RealtimeVoiceClient extends EventEmitter<RealtimeVoiceEvents> imple
     } else {
       const wsModule = await import('ws');
       this.ws = new wsModule.WebSocket(this.url, [], {
-        // @ts-ignore - until `@types/ws` is updated.
         finishRequest: (request: ClientRequest) => {
           request.setHeader('OpenAI-Beta', 'realtime=v1');
 
@@ -361,6 +368,17 @@ export class RealtimeVoiceClient extends EventEmitter<RealtimeVoiceEvents> imple
     }));
   }
 
+  public retrieveConversationItem(itemId: string) {
+    if (!this.isConnected) {
+      throw new Error('Not connected');
+    }
+    this.ws?.send(JSON.stringify({
+      event_id: createId(),
+      type: 'conversation.item.retrieve',
+      item_id: itemId,
+    }));
+  }
+
   public truncateConversationItem(itemId: string, contentIndex: number, audioEndMs: number) {
     if (!this.isConnected) {
       throw new Error('Not connected');
@@ -396,16 +414,28 @@ export class RealtimeVoiceClient extends EventEmitter<RealtimeVoiceEvents> imple
     }));
   }
 
-  public cancelResponse() {
+  public cancelResponse(responseId?: string) {
     if (!this.isConnected) {
       throw new Error('Not connected');
     }
     this.ws?.send(JSON.stringify({
       event_id: createId(),
       type: 'response.cancel',
+      response_id: responseId,
     }));
   }
 
+  public updateTranscriptionSession(transcriptionConfig: Partial<RealtimeTranscriptionSessionConfig>) {
+    if (!this.isConnected) {
+      throw new Error('Not connected');
+    }
+    this.ws?.send(JSON.stringify({
+      event_id: createId(),
+      type: 'transcription_session.update',
+      session: transcriptionConfig,
+    }));
+  }
+  
   protected validateVoice() {
     if (this.isAzure) {
       if (!AzureVoiceList.includes(this.sessionConfig.voice as any)) {
@@ -475,6 +505,7 @@ export class RealtimeVoiceClient extends EventEmitter<RealtimeVoiceEvents> imple
       input_audio_format: structuredClone(newSession.input_audio_format),
       output_audio_format: structuredClone(newSession.output_audio_format),
       input_audio_transcription: structuredClone(newSession.input_audio_transcription),
+      input_audio_noise_reduction: structuredClone(newSession.input_audio_noise_reduction),
       turn_detection: structuredClone(newSession.turn_detection),
       tools: structuredClone(newSession.tools),
       tool_choice: structuredClone(newSession.tool_choice),
@@ -486,7 +517,7 @@ export class RealtimeVoiceClient extends EventEmitter<RealtimeVoiceEvents> imple
   protected receive(type: string, message: any) {
     switch (type) {
       case 'error':
-        this.emit('error', message);
+        this._log('Received error:', message);
         break;
       case 'session.updated':
         this.saveSession((message as SessionUpdatedEvent).session);
